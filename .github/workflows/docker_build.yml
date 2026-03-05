@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       model:
-        description: "选择要编译的机型"
+        description: "选择机型"
         required: true
         type: choice
         options:
@@ -19,14 +19,13 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-    - name: Checkout repository
+    - name: Checkout
       uses: actions/checkout@v4
 
     - name: Build Docker image
-      run: |
-        docker build -t padavan-docker .
+      run: docker build -t padavan-docker .
 
-    - name: Start tmate SSH session
+    - name: SSH Debug (tmate)
       uses: mxschmitt/action-tmate@v3
       with:
         limit-access-to-actor: true
