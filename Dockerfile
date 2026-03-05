@@ -1,24 +1,41 @@
-FROM ubuntu:22.04
+name: Padavan Docker Build
 
-LABEL maintainer="Padavan Docker Build"
+on:
+  workflow_dispatch:
 
-ENV DEBIAN_FRONTEND=noninteractive
+jobs:
+  build:
+    runs-on: ubuntu-22.04
 
-RUN apt-get update && apt-get install -y \
-    build-essential gawk flex bison gperf cmake git wget curl unzip \
-    libtool-bin libtool autoconf automake autopoint gettext gettext-base \
-    autoconf-archive python3-docutils texinfo help2man pkg-config \
-    zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev \
-    libltdl-dev xxd cpio kmod fakeroot nano xz-utils \
-    && apt-get clean
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
 
-RUN mkdir -p /opt/padavan/toolchain-mipsel/toolchain-3.4.x
+    - name: Build Docker image
+      run: docker build -t padavan-docker .
 
-RUN wget -O /tmp/toolchain.tar.xz \
-    https://github.com/hanwckf/padavan-toolchain/releases/download/v1.0/mipsel-linux-uclibc.tar.xz \
-    && tar -xf /tmp/toolchain.tar.xz -C /opt/padavan/toolchain-mipsel/toolchain-3.4.x --strip-components=1 \
-    && rm /tmp/toolchain.tar.xz
+    - name: Start container with tmate
+      run: |
+        docker run -d --name padavan \
+          -v ${{ github.workspace }}:/opt/padavan \
+          -w /opt/padavan \
+          padavan-docker tail -f /dev/null
 
-ENV PATH=/opt/padavan/toolchain-mipsel/toolchain-3.4.x/bin:$PATH
+    - name: SSH into container
+      uses: mxschmitt/action-tmate@v3
+      with:
+        limit-access-to-actor: true
+        ssh-command: docker exec -it padavan bash
 
-WORKDIR /opt/padavan
+    - name: Build firmware inside Docker
+      run: |
+        docker exec padavan bash -c "
+          cd trunk &&
+          fakeroot ./build_firmware_modify YK-L1
+        "
+
+    - name: Upload firmware
+      uses: actions/upload-artifact@v4
+      with:
+        name: firmware-YK-L1
+        path: trunk/images/*.trx
