@@ -2,17 +2,6 @@ name: Padavan Docker Build
 
 on:
   workflow_dispatch:
-    inputs:
-      model:
-        description: "选择机型"
-        required: true
-        type: choice
-        options:
-          - YK-L1
-          - K2P
-          - MI-4A-100M
-          - NEWIFI3
-          - MSG1500
 
 jobs:
   build:
@@ -22,27 +11,31 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Build Docker image
-      run: docker build -t padavan-docker .
+    - name: Build Docker image (no cache)
+      run: docker build --no-cache -t padavan-docker .
 
-    - name: SSH Debug (tmate)
+    - name: Start container
+      run: |
+        docker run -d --name padavan \
+          -v ${{ github.workspace }}:/opt/padavan \
+          -w /opt/padavan \
+          padavan-docker tail -f /dev/null
+
+    - name: SSH into container
       uses: mxschmitt/action-tmate@v3
       with:
         limit-access-to-actor: true
+        ssh-command: docker exec -it padavan bash
 
     - name: Build firmware inside Docker
       run: |
-        docker run --rm \
-          -v ${{ github.workspace }}:/opt/padavan \
-          -w /opt/padavan \
-          padavan-docker \
-          bash -c "
-            cd trunk &&
-            fakeroot ./build_firmware_modify ${{ github.event.inputs.model }}
-          "
+        docker exec padavan bash -c "
+          cd trunk &&
+          fakeroot ./build_firmware_modify YK-L1
+        "
 
     - name: Upload firmware
       uses: actions/upload-artifact@v4
       with:
-        name: firmware-${{ github.event.inputs.model }}
+        name: firmware-YK-L1
         path: trunk/images/*.trx
