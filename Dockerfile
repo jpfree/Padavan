@@ -1,27 +1,23 @@
-FROM ubuntu:bionic
+FROM ubuntu:22.04
 
-MAINTAINER hanwckf <hanwckf@vip.qq.com>
+LABEL maintainer="Padavan Docker Build"
 
-ENV DEBIAN_FRONTEND noninteractive
+ENV DEBIAN_FRONTEND=noninteractive
 
-ARG APT_MIRROR_URL
-RUN if test -n "$APT_MIRROR_URL"; then \
-	sed -i "s#http://archive.ubuntu.com#$APT_MIRROR_URL#; \
-	s#http://security.ubuntu.com#$APT_MIRROR_URL#; \
-	s#http://ports.ubuntu.com#$APT_MIRROR_URL#" \
-	/etc/apt/sources.list; fi
+RUN apt-get update && apt-get install -y \
+    build-essential gawk flex bison gperf cmake git wget curl unzip \
+    libtool-bin python3-docutils gettext automake autopoint texinfo \
+    help2man pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev \
+    libncurses5-dev libltdl-dev xxd cpio kmod fakeroot nano \
+    && apt-get clean
 
-RUN apt -y -q update && apt -y -q upgrade && \
-	apt install -y -q unzip libtool-bin curl cmake gperf gawk flex bison htop \
-		nano xxd fakeroot cpio git python-docutils gettext automake autopoint \
-		texinfo build-essential help2man pkg-config zlib1g-dev libgmp3-dev libmpc-dev \
-		libmpfr-dev libncurses5-dev libltdl-dev wget kmod sudo locales vim && \
-	rm -rf /var/cache/apt/
+RUN mkdir -p /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x
 
-RUN echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen
+RUN wget -O /tmp/toolchain.tar.xz \
+    https://github.com/hanwckf/padavan-toolchain/releases/download/v1.0/mipsel-linux-uclibc.tar.xz \
+    && tar -xf /tmp/toolchain.tar.xz -C /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x --strip-components=1 \
+    && rm /tmp/toolchain.tar.xz
 
-ENV LANG en_US.utf8
+ENV PATH=/opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x/bin:$PATH
 
-# See https://github.com/hanwckf/padavan-toolchain/releases
-ADD mipsel-linux-uclibc.tar.xz /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x
-
+WORKDIR /opt/padavan
