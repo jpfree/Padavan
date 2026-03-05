@@ -11,7 +11,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Build Docker image (no cache)
+    - name: Build Docker image
       run: docker build --no-cache -t padavan-docker .
 
     - name: Start container
@@ -21,12 +21,7 @@ jobs:
           -w /opt/padavan/trunk \
           padavan-docker tail -f /dev/null
 
-    - name: SSH into container
-      uses: mxschmitt/action-tmate@v3
-      with:
-        limit-access-to-actor: true
-
-    - name: Build firmware inside Docker
+    - name: Build firmware
       run: |
         docker exec padavan bash -lc "
           cd /opt/padavan/trunk &&
@@ -36,5 +31,5 @@ jobs:
     - name: Upload firmware
       uses: actions/upload-artifact@v4
       with:
-        name: firmware-YK-L1
+        name: YK-L1-firmware
         path: trunk/images/*.trx
