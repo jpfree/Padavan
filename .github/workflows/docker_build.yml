@@ -17,8 +17,8 @@ jobs:
     - name: Start container
       run: |
         docker run -d --name padavan \
-          -v ${{ github.workspace }}:/opt/padavan \
-          -w /opt/padavan \
+          -v ${{ github.workspace }}:/opt/padavan/trunk \
+          -w /opt/padavan/trunk \
           padavan-docker tail -f /dev/null
 
     - name: SSH into container
@@ -30,7 +30,7 @@ jobs:
     - name: Build firmware inside Docker
       run: |
         docker exec padavan bash -c "
-          cd trunk &&
+          cd /opt/padavan/trunk &&
           fakeroot ./build_firmware_modify YK-L1
         "
 
