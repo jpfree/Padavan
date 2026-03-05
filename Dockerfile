@@ -7,9 +7,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y \
     build-essential gawk flex bison gperf cmake git wget curl unzip \
     libtool-bin libtool autoconf automake autopoint gettext gettext-base \
-    autoconf-archive python3-docutils gettext automake autopoint texinfo \
-    help2man pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev \
-    libncurses5-dev libltdl-dev xxd cpio kmod fakeroot nano xz-utils \
+    autoconf-archive python3-docutils texinfo help2man pkg-config \
+    zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev libncurses5-dev \
+    libltdl-dev xxd cpio kmod fakeroot nano xz-utils \
     && apt-get clean
 
 RUN mkdir -p /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x
