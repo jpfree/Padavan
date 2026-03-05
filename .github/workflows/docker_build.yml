@@ -1,0 +1,49 @@
+name: Padavan Docker Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "选择要编译的机型"
+        required: true
+        type: choice
+        options:
+          - YK-L1
+          - K2P
+          - MI-4A-100M
+          - NEWIFI3
+          - MSG1500
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Build Docker image
+      run: |
+        docker build -t padavan-docker .
+
+    - name: Start tmate SSH session
+      uses: mxschmitt/action-tmate@v3
+      with:
+        limit-access-to-actor: true
+
+    - name: Build firmware inside Docker
+      run: |
+        docker run --rm \
+          -v ${{ github.workspace }}:/opt/padavan \
+          -w /opt/padavan \
+          padavan-docker \
+          bash -c "
+            cd trunk &&
+            fakeroot ./build_firmware_modify ${{ github.event.inputs.model }}
+          "
+
+    - name: Upload firmware
+      uses: actions/upload-artifact@v4
+      with:
+        name: firmware-${{ github.event.inputs.model }}
+        path: trunk/images/*.trx
