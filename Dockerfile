@@ -12,10 +12,8 @@ RUN apt-get update && apt-get install -y \
     libltdl-dev xxd cpio kmod fakeroot nano xz-utils \
     && apt-get clean
 
-# 正确的工具链路径（Padavan 需要这个）
 RUN mkdir -p /opt/padavan/toolchain-mipsel/toolchain-3.4.x
 
-# 下载并解压工具链到正确路径
 RUN wget -O /tmp/toolchain.tar.xz \
     https://github.com/hanwckf/padavan-toolchain/releases/download/v1.0/mipsel-linux-uclibc.tar.xz \
     && tar -xf /tmp/toolchain.tar.xz -C /opt/padavan/toolchain-mipsel/toolchain-3.4.x --strip-components=1 \
