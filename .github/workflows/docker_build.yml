@@ -1,48 +1,25 @@
-name: Padavan Docker Build
+FROM ubuntu:22.04
 
-on:
-  workflow_dispatch:
-    inputs:
-      model:
-        description: "选择机型"
-        required: true
-        type: choice
-        options:
-          - YK-L1
-          - K2P
-          - MI-4A-100M
-          - NEWIFI3
-          - MSG1500
+LABEL maintainer="Padavan Docker Build"
 
-jobs:
-  build:
-    runs-on: ubuntu-22.04
+ENV DEBIAN_FRONTEND=noninteractive
 
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+RUN apt-get update && apt-get install -y \
+    build-essential gawk flex bison gperf cmake git wget curl unzip \
+    libtool-bin python3-docutils gettext automake autopoint texinfo \
+    help2man pkg-config zlib1g-dev libgmp3-dev libmpc-dev libmpfr-dev \
+    libncurses5-dev libltdl-dev xxd cpio kmod fakeroot nano \
+    && apt-get clean
 
-    - name: Build Docker image
-      run: docker build -t padavan-docker .
+# 创建工具链目录
+RUN mkdir -p /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x
 
-    - name: SSH Debug (tmate)
-      uses: mxschmitt/action-tmate@v3
-      with:
-        limit-access-to-actor: true
+# 下载并解压工具链（替代 ADD）
+RUN wget -O /tmp/toolchain.tar.xz \
+    https://github.com/hanwckf/padavan-toolchain/releases/download/v1.0/mipsel-linux-uclibc.tar.xz \
+    && tar -xf /tmp/toolchain.tar.xz -C /opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x --strip-components=1 \
+    && rm /tmp/toolchain.tar.xz
 
-    - name: Build firmware inside Docker
-      run: |
-        docker run --rm \
-          -v ${{ github.workspace }}:/opt/padavan \
-          -w /opt/padavan \
-          padavan-docker \
-          bash -c "
-            cd trunk &&
-            fakeroot ./build_firmware_modify ${{ github.event.inputs.model }}
-          "
+ENV PATH=/opt/rt-n56u/toolchain-mipsel/toolchain-3.4.x/bin:$PATH
 
-    - name: Upload firmware
-      uses: actions/upload-artifact@v4
-      with:
-        name: firmware-${{ github.event.inputs.model }}
-        path: trunk/images/*.trx
+WORKDIR /opt/padavan
